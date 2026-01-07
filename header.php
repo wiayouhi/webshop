@@ -1,0 +1,566 @@
+<?php
+// header.php
+if(!isset($pdo)) { require_once 'db.php'; }
+
+// --- 1. จัดการ Data & Config พื้นฐาน ---
+$bg_list = json_decode($web_config->background_list ?? '[]', true);
+if (!$bg_list && !empty($web_config->background_img)) {
+    $bg_list = [$web_config->background_img];
+}
+$emojis = isset($web_config->floating_emojis) ? array_filter(explode(',', $web_config->floating_emojis)) : [];
+
+// สีหลักเดิมของเว็บ (Set ไว้ก่อน)
+$original_site_color = ($web_config->site_color == "red") ? "#ef4444" : (($web_config->site_color == "blue") ? "#3b82f6" : "#8b5cf6");
+$site_main_color = $original_site_color; // ตัวแปรนี้จะถูกเปลี่ยนถ้ามีเทศกาล
+
+// --- 2. ระบบตรวจสอบเทศกาล (Seasonal System Ultimate) ---
+$d = date('d');
+$m = date('m');
+
+// Default Config (วันปกติ)
+$season = [
+    'type' => 'normal',
+    'color' => $original_site_color,
+    'icon' => 'fa-gamepad',
+    'title' => 'LOADING',
+    'sub' => 'Welcome to ' . $web_config->site_name,
+    'effect' => 'normal' 
+];
+
+// Logic ตรวจสอบเทศกาล & **เปลี่ยนสีธีมเว็บ**
+if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
+    $season = [
+        'type' => 'newyear',
+        'color' => '#fbbf24', // สีทอง
+        'icon' => 'fa-champagne-glasses',
+        'title' => 'HAPPY NEW YEAR',
+        'sub' => 'Wishing you happiness!',
+        'effect' => ($d == 31 || $d == 1) ? 'fireworks' : 'snow'
+    ];
+} elseif ($m == 2 && $d >= 10 && $d <= 14) { // 🌹 วาเลนไทน์
+    $season = [
+        'type' => 'valentine',
+        'color' => '#f43f5e', // สีชมพูเข้ม
+        'icon' => 'fa-heart',
+        'title' => 'HAPPY VALENTINE',
+        'sub' => 'Love is in the air...',
+        'effect' => 'hearts'
+    ];
+} elseif ($m == 4 && $d >= 10 && $d <= 16) { // 💦 สงกรานต์
+    $season = [
+        'type' => 'songkran',
+        'color' => '#0ea5e9', // สีฟ้าสดใส
+        'icon' => 'fa-water',
+        'title' => 'HAPPY SONGKRAN',
+        'sub' => 'Splash functionality loading...',
+        'effect' => 'normal'
+    ];
+} elseif ($m == 10 && $d >= 25) { // 👻 ฮาโลวีน
+    $season = [
+        'type' => 'halloween',
+        'color' => '#f97316', // สีส้ม
+        'icon' => 'fa-ghost',
+        'title' => 'TRICK OR TREAT',
+        'sub' => 'Spooky loading...',
+        'effect' => 'spooky'
+    ];
+} elseif ($m == 11) { // 🌕 ลอยกระทง
+    $season = [
+        'type' => 'loykrathong',
+        'color' => '#facc15', // สีเหลือง
+        'icon' => 'fa-dharmachakra', 
+        'title' => 'LOY KRATHONG',
+        'sub' => 'Full moon loading...',
+        'effect' => 'normal'
+    ];
+}
+
+// ** Hack สำหรับเทส (ลบออกเมื่อใช้งานจริง) **
+// $season['type'] = 'songkran'; $season['color'] = '#0ea5e9'; $season['icon'] = 'fa-water'; 
+
+// *** ฟีเจอร์เปลี่ยนสีเว็บตามเทศกาล ***
+// ถ้าไม่ใช่ Normal ให้เอาสีเทศกาลมาทับสีหลักเว็บเลย
+if ($season['type'] !== 'normal') {
+    $site_main_color = $season['color'];
+}
+?>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $web_config->site_name; ?></title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Kanit', 'sans-serif'] },
+                    colors: {
+                        theme: {
+                            main: '<?php echo $site_main_color; ?>', // สีนี้จะเปลี่ยนตามเทศกาล
+                            hover: '<?php echo $site_main_color; ?>CC',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'season-bounce': 'seasonBounce 2s infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        seasonBounce: {
+                            '0%, 100%': { transform: 'translateY(-5%)', animationTimingFunction: 'cubic-bezier(0.8,0,1,1)' },
+                            '50%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0,0,0.2,1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        if (sessionStorage.getItem('introShown')) {
+            document.write('<style>#page-loader { display: none !important; }</style>');
+        }
+    </script>
+
+    <style>
+        /* Base Setup */
+        body { color: #f8fafc; font-family: 'Kanit', sans-serif; overflow-x: hidden; background-color: #0f172a; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--theme-main); }
+
+        /* Dynamic Background */
+        #dynamic-bg { position: fixed; inset: 0; z-index: -20; overflow: hidden; background: #0f172a; }
+        .bg-slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 2s ease-in-out, transform 10s ease; transform: scale(1.1); }
+        .bg-slide.active { opacity: 1; transform: scale(1); }
+        #video-bg { position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%; transform: translate(-50%, -50%); z-index: -20; object-fit: cover; opacity: 0.8; }
+        .bg-overlay { position: fixed; inset: 0; background: linear-gradient(to bottom, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.95), #0f172a); z-index: -10; pointer-events: none; }
+
+        /* Canvas Effect (Layer หลังสุด) */
+        #season-canvas { position: fixed; inset: 0; z-index: -5; pointer-events: none; }
+
+        /* --- Seasonal Loader --- */
+        #page-loader {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #020617;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.8s cubic-bezier(0.7, 0, 0.3, 1), visibility 0.8s;
+        }
+        #page-loader.loaded { opacity: 0; visibility: hidden; }
+        
+        .loader-icon-wrapper {
+            width: 100px; height: 100px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid <?php echo $season['color']; ?>;
+            box-shadow: 0 0 30px <?php echo $season['color']; ?>40;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        
+        /* Pulse Effect */
+        .loader-icon-wrapper::before {
+            content: ''; position: absolute; inset: -5px; border-radius: 50%;
+            border: 2px solid <?php echo $season['color']; ?>;
+            opacity: 0.5; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
+
+        .loader-icon { font-size: 3rem; color: <?php echo $season['color']; ?>; }
+        
+        /* Progress Bar */
+        .loader-progress { width: 240px; height: 4px; background: #1e293b; border-radius: 10px; overflow: hidden; position: relative; }
+        .loader-bar { 
+            position: absolute; left: 0; top: 0; height: 100%; 
+            background: <?php echo $season['color']; ?>; 
+            box-shadow: 0 0 10px <?php echo $season['color']; ?>;
+            width: 0%; animation: loading 1.5s ease-in-out forwards;
+        }
+        @keyframes loading { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* Songkran Water Drop */
+        .water-drop { position: absolute; width: 10px; height: 10px; background: #0ea5e9; border-radius: 50%; animation: drop 1s infinite; }
+        @keyframes drop { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(50px) scale(0); opacity: 0; } }
+
+        /* Navigation Styles */
+        .glass-nav { background: rgba(15, 23, 42, 0.05); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.4s; }
+        .glass-nav.scrolled { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5); }
+        .glass-card { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); }
+
+        .nav-link { position: relative; }
+        .nav-link::after { content: ''; position: absolute; bottom: -2px; left: 50%; width: 0; height: 2px; background: <?php echo $site_main_color; ?>; transition: all 0.3s ease; transform: translateX(-50%); box-shadow: 0 0 10px <?php echo $site_main_color; ?>; }
+        .nav-link:hover::after, .nav-link.active::after { width: 80%; }
+        
+        #mobile-menu-drawer { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform: translateX(100%); }
+        #mobile-menu-drawer.open { transform: translateX(0); }
+
+        /* Emoji Floating */
+        .floating-emoji { position: fixed; z-index: -5; animation: floatUp linear forwards; pointer-events: none; opacity: 0; filter: blur(1px); }
+        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; } 10% { opacity: 0.6; } 100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); opacity: 0; } }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <div id="page-loader">
+        <div class="loader-icon-wrapper <?php echo ($season['type'] == 'songkran' || $season['type'] == 'valentine') ? 'animate-season-bounce' : ''; ?>">
+            <?php if($season['type'] == 'normal' && $web_config->site_logo): ?>
+                <img src="<?php echo $web_config->site_logo; ?>" class="w-16 h-16 rounded-full object-cover">
+            <?php else: ?>
+                <i class="fa-solid <?php echo $season['icon']; ?> loader-icon"></i>
+            <?php endif; ?>
+
+            <?php if($season['type'] == 'songkran'): ?>
+                <div class="water-drop" style="top: 80%; left: 30%;"></div>
+                <div class="water-drop" style="top: 80%; left: 70%; animation-delay: 0.5s;"></div>
+            <?php endif; ?>
+        </div>
+        
+        <h1 class="text-3xl font-bold tracking-widest uppercase mb-2" style="color: <?php echo $season['color']; ?>; text-shadow: 0 0 15px <?php echo $season['color']; ?>50;">
+            <?php echo $season['title']; ?>
+        </h1>
+        <p class="text-sm text-gray-400 font-light tracking-wider mb-8"><?php echo $season['sub']; ?></p>
+        
+        <div class="loader-progress">
+            <div class="loader-bar"></div>
+        </div>
+    </div>
+
+    <?php if ($web_config->background_type == 'video' && !empty($bg_list)): ?>
+        <video autoplay muted loop playsinline id="video-bg"><source src="<?php echo $bg_list[0]; ?>" type="video/mp4"></video>
+    <?php else: ?>
+        <div id="dynamic-bg">
+            <?php foreach($bg_list as $index => $img): ?>
+                <div class="bg-slide <?php echo $index === 0 ? 'active' : ''; ?>" style="background-image: url('<?php echo $img; ?>');"></div>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+    <div class="bg-overlay"></div>
+
+    <canvas id="season-canvas"></canvas>
+
+    <nav id="main-nav" class="glass-nav fixed top-0 w-full z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                
+                <a href="index.php" class="flex items-center gap-3 group">
+                    <div class="relative w-11 h-11">
+                        <div class="absolute inset-0 bg-theme-main blur-lg opacity-40 group-hover:opacity-60 transition duration-500 rounded-full animate-pulse-slow"></div>
+                        <?php if($web_config->site_logo): ?>
+                            <img src="<?php echo $web_config->site_logo; ?>" class="relative w-full h-full rounded-full object-cover border-2 border-white/10 group-hover:border-theme-main transition duration-300">
+                        <?php else: ?>
+                            <div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center border border-white/10"><i class="fa-solid fa-gamepad text-theme-main"></i></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xl font-bold text-white tracking-wide group-hover:text-theme-main transition duration-300"><?php echo $web_config->site_name; ?></span>
+                        <span class="text-[10px] text-gray-400 font-light tracking-wider uppercase">Best Gaming Service</span>
+                    </div>
+                </a>
+
+                <div class="hidden lg:flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/5 backdrop-blur-sm">
+                    <?php 
+                    $menu_items = [
+                        ['url' => 'index.php', 'icon' => 'fa-house', 'label' => 'หน้าหลัก'],
+                        ['url' => 'shop.php', 'icon' => 'fa-bag-shopping', 'label' => 'ร้านค้า'],
+                        ['url' => 'services.php', 'icon' => 'fa-gamepad', 'label' => 'เติมเกม'],
+                        ['url' => 'redeem.php', 'icon' => 'fa-ticket', 'label' => 'แลกโค้ด'],
+                        ['url' => 'topup.php', 'icon' => 'fa-wallet', 'label' => 'เติมเงิน'],
+                        ['url' => 'contact.php', 'icon' => 'fa-headset', 'label' => 'ช่วยเหลือ'],
+                    ];
+                    foreach($menu_items as $item): 
+                        $isActive = basename($_SERVER['PHP_SELF']) == $item['url'];
+                    ?>
+                        <a href="<?php echo $item['url']; ?>" 
+                           class="nav-link px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 
+                           <?php echo $isActive ? 'text-white' : 'text-gray-400 hover:text-white'; ?> 
+                           <?php echo $isActive ? 'active' : ''; ?>">
+                           <i class="fa-solid <?php echo $item['icon']; ?> <?php echo $isActive ? 'text-theme-main' : ''; ?>"></i> 
+                            <?php echo $item['label']; ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <?php if(isset($_SESSION['user_id'])): ?>
+                        <div class="hidden lg:flex flex-col items-end mr-2">
+                            <span class="text-[10px] text-gray-400 font-light uppercase tracking-wider">Balance</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-coins text-yellow-400 text-xs"></i>
+                                <span class="font-bold text-white text-lg leading-none">฿<?php echo number_format($_SESSION['point'], 2); ?></span>
+                            </div>
+                        </div>
+
+                        <div class="relative group z-50">
+                            <button class="relative w-10 h-10 rounded-full p-0.5 border-2 border-transparent hover:border-theme-main transition-all duration-300">
+                                <img src="<?php echo $_SESSION['profile_img'] ? $_SESSION['profile_img'] : 'https://ui-avatars.com/api/?name='.$_SESSION['username']; ?>" class="w-full h-full rounded-full object-cover bg-slate-800">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900"></div>
+                            </button>
+
+                            <div class="absolute right-0 mt-3 w-64 glass-card rounded-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right scale-95 group-hover:scale-100 overflow-hidden shadow-2xl shadow-black/50">
+                                <div class="p-4 bg-gradient-to-br from-slate-800/80 to-slate-900/80 border-b border-white/5">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-theme-main/20 flex items-center justify-center text-theme-main font-bold text-lg">
+                                            <?php echo mb_substr($_SESSION['username'], 0, 1); ?>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <p class="text-white font-bold truncate text-sm"><?php echo $_SESSION['username']; ?></p>
+                                            <p class="text-[10px] text-theme-main uppercase tracking-wide bg-theme-main/10 inline-block px-1.5 rounded">Member</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-2 space-y-1">
+                                    <a href="profile.php" class="block px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-gray-300 hover:text-white transition flex items-center gap-3">
+                                        <i class="fa-regular fa-id-card w-5 opacity-70"></i> ข้อมูลส่วนตัว
+                                    </a>
+                                    <a href="history.php" class="block px-3 py-2.5 rounded-xl hover:bg-white/10 text-sm text-gray-300 hover:text-white transition flex items-center gap-3">
+                                        <i class="fa-solid fa-clock-rotate-left w-5 opacity-70"></i> ประวัติการสั่งซื้อ
+                                    </a>
+                                    <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+                                    <a href="admin/dashboard.php" class="block px-3 py-2.5 rounded-xl hover:bg-theme-main/20 text-sm text-theme-main transition flex items-center gap-3">
+                                        <i class="fa-solid fa-gauge-high w-5"></i> จัดการระบบ
+                                    </a>
+                                    <?php endif; ?>
+                                    <div class="h-px bg-white/10 my-1 mx-2"></div>
+                                    <a href="logout.php" class="block px-3 py-2.5 rounded-xl hover:bg-red-500/20 text-sm text-red-400 hover:text-red-300 transition flex items-center gap-3 group/logout">
+                                        <i class="fa-solid fa-power-off w-5 group-hover/logout:rotate-90 transition-transform"></i> ออกจากระบบ
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="hidden lg:flex items-center gap-3">
+                            <a href="login.php" class="text-sm font-medium text-gray-300 hover:text-white transition px-4 py-2 hover:bg-white/5 rounded-full">เข้าสู่ระบบ</a>
+                            <a href="register.php" class="text-sm font-bold bg-theme-main text-white px-6 py-2.5 rounded-full shadow-[0_0_15px_rgba(var(--theme-main),0.4)] hover:shadow-[0_0_25px_rgba(var(--theme-main),0.6)] hover:-translate-y-0.5 transition-all duration-300">
+                                สมัครสมาชิก
+                            </a>
+                        </div>
+                    <?php endif; ?>
+
+                    <button onclick="toggleMobileMenu()" class="lg:hidden w-10 h-10 flex flex-col justify-center items-center gap-1.5 group">
+                        <span class="w-6 h-0.5 bg-white rounded-full transition-all group-hover:w-8 group-hover:bg-theme-main"></span>
+                        <span class="w-6 h-0.5 bg-white rounded-full transition-all group-hover:w-4 group-hover:bg-theme-main"></span>
+                        <span class="w-6 h-0.5 bg-white rounded-full transition-all group-hover:w-6 group-hover:bg-theme-main"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="mobile-menu-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] opacity-0 pointer-events-none transition-opacity duration-300"></div>
+    <div id="mobile-menu-drawer" class="fixed top-0 right-0 h-full w-[85%] max-w-[320px] bg-[#0f172a] z-[70] flex flex-col border-l border-white/10 shadow-2xl">
+        <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <h2 class="text-xl font-bold text-white">Menu</h2>
+            <button onclick="toggleMobileMenu()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500 hover:rotate-90 transition-all duration-300">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-1">
+            <?php if(!isset($_SESSION['user_id'])): ?>
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <a href="login.php" class="py-3 text-center rounded-xl bg-slate-800 text-gray-300 border border-white/5">เข้าสู่ระบบ</a>
+                    <a href="register.php" class="py-3 text-center rounded-xl bg-theme-main text-white shadow-lg shadow-theme-main/20">สมัครสมาชิก</a>
+                </div>
+            <?php else: ?>
+                <div class="bg-gradient-to-r from-slate-800 to-slate-900 p-4 rounded-2xl border border-white/5 mb-6 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i class="fa-solid fa-wallet text-6xl text-theme-main"></i></div>
+                    <div class="flex items-center gap-3 relative z-10">
+                        <img src="<?php echo $_SESSION['profile_img'] ? $_SESSION['profile_img'] : 'https://ui-avatars.com/api/?name='.$_SESSION['username']; ?>" class="w-12 h-12 rounded-full border-2 border-theme-main">
+                        <div>
+                            <div class="text-white font-bold"><?php echo $_SESSION['username']; ?></div>
+                            <div class="text-theme-main text-sm font-semibold">฿ <?php echo number_format($_SESSION['point'], 2); ?></div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <div class="space-y-1">
+                <?php foreach($menu_items as $mItem): $isMActive = basename($_SERVER['PHP_SELF']) == $mItem['url']; ?>
+                <a href="<?php echo $mItem['url']; ?>" class="flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all <?php echo $isMActive ? 'bg-theme-main text-white shadow-lg shadow-theme-main/20' : 'text-gray-400 hover:bg-white/5 hover:text-white hover:pl-6'; ?>">
+                    <i class="fa-solid <?php echo $mItem['icon']; ?> w-6 text-center"></i>
+                    <span class="font-medium"><?php echo $mItem['label']; ?></span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php if(isset($_SESSION['user_id'])): ?>
+                <div class="h-px bg-white/5 my-4"></div>
+                <?php if(isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
+                    <a href="admin/dashboard.php" class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-theme-main hover:bg-theme-main/10 transition-all hover:pl-6">
+                        <i class="fa-solid fa-gauge w-6 text-center"></i> จัดการระบบ
+                    </a>
+                <?php endif; ?>
+                <a href="logout.php" class="flex items-center gap-4 px-4 py-3.5 rounded-xl text-red-400 hover:bg-red-500/10 transition-all hover:pl-6">
+                    <i class="fa-solid fa-right-from-bracket w-6 text-center"></i> ออกจากระบบ
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <?php if(!empty($web_config->marquee_text)): ?>
+    <div class="pt-24 pb-2 container mx-auto px-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+        <div class="glass-card rounded-full py-2 px-4 flex items-center gap-4 overflow-hidden relative">
+            <div class="flex-shrink-0 bg-theme-main/20 text-theme-main px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-theme-main opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-theme-main"></span>
+                </span>
+                News
+            </div>
+            <marquee scrollamount="4" class="text-sm font-light text-gray-300">
+                <?php echo $web_config->marquee_text; ?>
+            </marquee>
+        </div>
+    </div>
+    <?php else: ?>
+    <div class="pt-24"></div>
+    <?php endif; ?>
+
+    <main class="flex-grow container mx-auto px-4 py-6 relative z-10 animate-fade-in-up" style="animation-delay: 0.2s;">
+
+    <script>
+        // --- 1. Smart Loader Logic (แก้ปัญหาโหลดบ่อย) ---
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('page-loader');
+            
+            // เช็คว่าเคยเข้ามาใน Session นี้หรือยัง
+            if (!sessionStorage.getItem('introShown')) {
+                // ครั้งแรก: ให้เล่น Animation
+                setTimeout(() => {
+                    loader.classList.add('loaded');
+                    // บันทึกว่าแสดงแล้ว
+                    sessionStorage.setItem('introShown', 'true');
+                }, 1200);
+            } else {
+                // ครั้งต่อไป: ซ่อนทันที (จริงๆ CSS ซ่อนไปแล้วใน <head> เพื่อกันกระพริบ แต่ใส่ไว้อีกทีเพื่อความชัวร์)
+                loader.classList.add('loaded');
+                loader.style.display = 'none';
+            }
+        });
+
+        // --- 2. Nav Scroll ---
+        const navbar = document.getElementById('main-nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 20) { navbar.classList.add('scrolled'); } 
+            else { navbar.classList.remove('scrolled'); }
+        });
+
+        function toggleMobileMenu() {
+            const overlay = document.getElementById('mobile-menu-overlay');
+            const drawer = document.getElementById('mobile-menu-drawer');
+            if (drawer.classList.contains('open')) {
+                drawer.classList.remove('open');
+                overlay.classList.remove('opacity-100', 'pointer-events-auto');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                document.body.style.overflow = '';
+            } else {
+                drawer.classList.add('open');
+                overlay.classList.remove('opacity-0', 'pointer-events-none');
+                overlay.classList.add('opacity-100', 'pointer-events-auto');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        // --- 3. BG Slider ---
+        <?php if ($web_config->background_type == 'image' && count($bg_list) > 1): ?>
+        const slides = document.querySelectorAll('.bg-slide');
+        let currentSlide = 0;
+        setInterval(() => {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (currentSlide + 1) % slides.length;
+            slides[currentSlide].classList.add('active');
+        }, 6000); 
+        <?php endif; ?>
+
+        // --- 4. Seasonal Canvas (เหมือนเดิม) ---
+        const season = '<?php echo $season['effect']; ?>';
+        const canvas = document.getElementById('season-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width; canvas.height = height;
+
+        window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; });
+
+        class Particle {
+            constructor(type) { this.type = type; this.reset(); }
+            reset() {
+                this.x = Math.random() * width; this.y = Math.random() * height - height;
+                this.speed = Math.random() * 2 + 1; this.size = Math.random() * 3 + 1; this.opacity = Math.random() * 0.5 + 0.3;
+                if (this.type === 'snow') { this.vx = Math.random() * 1 - 0.5; }
+                else if (this.type === 'hearts') { this.y = height + Math.random() * 100; this.speed = Math.random() * 1.5 + 0.5; this.size = Math.random() * 15 + 10; this.vx = Math.random() * 0.6 - 0.3; }
+                else if (this.type === 'spooky') { this.speed = Math.random() * 0.5 + 0.2; this.size = Math.random() * 200 + 100; this.vx = Math.random() * 0.5 - 0.25; this.opacity = 0.05; }
+            }
+            update() {
+                if (this.type === 'snow') { this.y += this.speed; this.x += this.vx; if (this.y > height) this.reset(); }
+                else if (this.type === 'hearts') { this.y -= this.speed; this.x += Math.sin(this.y * 0.01) * 0.5; if (this.y < -50) this.reset(); }
+                else if (this.type === 'spooky') { this.x += this.vx; if (this.x > width + 200 || this.x < -200) this.reset(); }
+            }
+            draw() {
+                ctx.globalAlpha = this.opacity;
+                if (this.type === 'snow') { ctx.fillStyle = '#FFF'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+                else if (this.type === 'hearts') { ctx.font = this.size + 'px serif'; ctx.fillText('❤️', this.x, this.y); }
+                else if (this.type === 'spooky') { ctx.fillStyle = '#AAAAAA'; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+            }
+        }
+
+        let fireworks = [];
+        class Firework { /* ... Firework Code เหมือนเดิม ... */
+            constructor() { this.x = Math.random() * width; this.y = height; this.targetY = Math.random() * (height / 2); this.speed = 10; this.particles = []; this.exploded = false; this.color = `hsl(${Math.random() * 360}, 100%, 50%)`; }
+            update() { if (!this.exploded) { this.y -= this.speed; if (this.y <= this.targetY) this.explode(); } else { for (let i = this.particles.length - 1; i >= 0; i--) { this.particles[i].update(); if (this.particles[i].alpha <= 0) this.particles.splice(i, 1); } } }
+            draw() { if (!this.exploded) { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill(); } else { this.particles.forEach(p => p.draw()); } }
+            explode() { this.exploded = true; for (let i = 0; i < 50; i++) this.particles.push(new FireworkParticle(this.x, this.y, this.color)); }
+        }
+        class FireworkParticle {
+            constructor(x, y, color) { this.x = x; this.y = y; this.color = color; const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 4; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; this.alpha = 1; this.decay = Math.random() * 0.02 + 0.01; }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += 0.05; this.alpha -= this.decay; }
+            draw() { ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI*2); ctx.fill(); }
+        }
+
+        const particles = [];
+        if (season === 'snow') { for(let i=0; i<100; i++) particles.push(new Particle('snow')); }
+        else if (season === 'hearts') { for(let i=0; i<30; i++) particles.push(new Particle('hearts')); }
+        else if (season === 'spooky') { for(let i=0; i<20; i++) particles.push(new Particle('spooky')); }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            if (season === 'fireworks') {
+                if (Math.random() < 0.03) fireworks.push(new Firework());
+                for (let i = fireworks.length - 1; i >= 0; i--) { fireworks[i].update(); fireworks[i].draw(); if (fireworks[i].exploded && fireworks[i].particles.length === 0) fireworks.splice(i, 1); }
+            }
+            requestAnimationFrame(animate);
+        }
+        if (season !== 'normal') animate();
+
+        // --- 5. Emoji Fallback ---
+        <?php if ($season['effect'] == 'normal' && !empty($emojis)): ?>
+        const emojiList = <?php echo json_encode(array_values($emojis)); ?>;
+        function spawnEmoji() {
+            if (emojiList.length === 0) return;
+            const emoji = document.createElement('div');
+            emoji.innerText = emojiList[Math.floor(Math.random() * emojiList.length)];
+            emoji.classList.add('floating-emoji');
+            emoji.style.left = (Math.random() * 90 + 5) + 'vw';
+            emoji.style.fontSize = (Math.random() * 24 + 20) + 'px';
+            const duration = Math.random() * 5 + 6; 
+            emoji.style.animationDuration = duration + 's';
+            document.body.appendChild(emoji);
+            setTimeout(() => { emoji.remove(); }, duration * 1000);
+        }
+        setInterval(spawnEmoji, 1200); 
+        <?php endif; ?>
+    </script>
+</body>
+</html>
