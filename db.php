@@ -64,9 +64,17 @@ $port     = getenv('DB_PORT')     ?: '3306';
 
 try {
     $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-    $pdo = new PDO($dsn, $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+    
+    // ตั้งค่า Options สำหรับ PDO ให้รองรับ SSL
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        // บรรทัดสำคัญ: บังคับใช้ SSL Connection
+        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, 
+    ];
+
+    $pdo = new PDO($dsn, $username, $password, $options);
+    
 } catch(PDOException $e) {
     error_log("Database Connection Error: " . $e->getMessage()); 
     die("<h1>Service Unavailable</h1><p>The server is temporarily unable to service your request.</p>");
@@ -107,3 +115,4 @@ function checkAdmin($pdo) {
     }
 }
 ?>
+
