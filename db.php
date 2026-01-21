@@ -1,7 +1,7 @@
 <?php
 /**
  * DATABASE CONNECTION & SECURITY CONFIGURATION
- * Stealth Mode: ส่งค่า 404 Not Found เมื่อมีการบุกรุก
+ * ปรับปรุงสำหรับ Render + TiDB Cloud (SSL Enforcement)
  */
 
 // -------------------------------------------------------------------------
@@ -22,13 +22,13 @@ function trigger404() {
     exit;
 }
 
-// 1. ป้องกันการเข้าถึงไฟล์ db.php โดยตรงผ่าน URL
+// ป้องกันการเข้าถึงไฟล์ db.php โดยตรงผ่าน URL
 if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
     trigger404();
 }
 
 // -------------------------------------------------------------------------
-// 🛡️ SECURITY HEADERS
+// 🛡️ SECURITY HEADERS & SESSION
 // -------------------------------------------------------------------------
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
@@ -36,8 +36,9 @@ header("Content-Security-Policy: default-src 'self' https: data: 'unsafe-inline'
 
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-// บน Render เป็น HTTPS อยู่แล้ว เปิดบรรทัดนี้ได้เลยครับ
-ini_set('session.cookie_secure', 1); 
+if (getenv('RENDER')) { // ตรวจสอบว่ารันบน Render หรือไม่
+    ini_set('session.cookie_secure', 1); 
+}
 
 ob_start(); 
 if (session_status() === PHP_SESSION_NONE) {
@@ -53,29 +54,37 @@ if (empty($_SESSION['csrf_token'])) {
 }
 
 // -------------------------------------------------------------------------
-// 🔌 DATABASE CONNECTION (PDO) - ปรับปรุงสำหรับ Render
+// 🔌 DATABASE CONNECTION (PDO) - บังคับ SSL สำหรับ TiDB Cloud
 // -------------------------------------------------------------------------
-// พยายามดึงค่าจาก Environment Variables ถ้าไม่มีให้ใช้ localhost (สำหรับรันในเครื่องตัวเอง)
 $host     = getenv('DB_HOST')     ?: 'localhost';
 $dbname   = getenv('DB_NAME')     ?: 'shop_db';
 $username = getenv('DB_USER')     ?: 'root';
 $password = getenv('DB_PASS')     ?: '';
-$port     = getenv('DB_PORT')     ?: '3306';
+$port     = getenv('DB_PORT')     ?: '4000'; // TiDB มักจะใช้ 4000
 
 try {
     $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
     
-    // ตั้งค่า Options สำหรับ PDO ให้รองรับ SSL
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-        // บรรทัดสำคัญ: บังคับใช้ SSL Connection
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, 
+        // สำคัญมากสำหรับ TiDB: บังคับใช้ SSL ทันทีที่เชื่อมต่อ
+        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4',
     ];
+
+    // ตรวจสอบและบังคับใช้ SSL ถ้าไม่ได้รันบน localhost
+    if ($host !== 'localhost' && $host !== '127.0.0.1') {
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        // บรรทัดนี้จะบังคับให้ Driver ใช้ SSL Mode ในการเชื่อมต่อ
+        if (defined('PDO::MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+        }
+    }
 
     $pdo = new PDO($dsn, $username, $password, $options);
     
 } catch(PDOException $e) {
+    // บันทึก Error ลง Log เพื่อตรวจสอบบน Dashboard ของ Render
     error_log("Database Connection Error: " . $e->getMessage()); 
     die("<h1>Service Unavailable</h1><p>The server is temporarily unable to service your request.</p>");
 }
@@ -115,4 +124,3 @@ function checkAdmin($pdo) {
     }
 }
 ?>
-
