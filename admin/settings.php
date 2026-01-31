@@ -14,8 +14,10 @@ if (isset($_POST['save_settings'])) {
 
     // รับค่าข้อมูลทั่วไป
     $site_name = $_POST['site_name'];
+    $site_desc = $_POST['site_description'];
+    $site_about = $_POST['site_about'];
     $site_logo = $_POST['site_logo'];
-    $wallet_phone = $_POST['truewallet_phone']; // ใช้สำหรับแสดงผล หรือรับเงิน (ตามการใช้งาน)
+    $wallet_phone = $_POST['truewallet_phone']; 
     $marquee = $_POST['marquee_text'];
     
     // รับค่าโซเชียล
@@ -26,6 +28,11 @@ if (isset($_POST['save_settings'])) {
     $youtube = $_POST['youtube_url'];
     $tiktok = $_POST['tiktok_url'];
     $instagram = $_POST['instagram_url'];
+
+    // --- รับค่า Discord Login API (เพิ่มใหม่) ---
+    $discord_client_id = $_POST['discord_client_id'];
+    $discord_client_secret = $_POST['discord_client_secret'];
+    $discord_redirect_uri = $_POST['discord_redirect_uri'];
 
     // จัดการแบนเนอร์
     $banner_urls = isset($_POST['banner_urls']) ? $_POST['banner_urls'] : [];
@@ -39,38 +46,27 @@ if (isset($_POST['save_settings'])) {
     $bg_list_json = json_encode($bg_clean, JSON_UNESCAPED_UNICODE);
     $emojis = $_POST['floating_emojis'];
 
-    // ระบบการเงิน (เหลือแค่ TrueWallet)
+    // ระบบการเงิน
     $pay_tm_phone = $_POST['payment_tm_phone'];
     $pay_tm_api = $_POST['payment_tm_api_url'];
 
-    // SQL Update (ตัดส่วน Bank/Slip ออก)
-    $sql = "UPDATE settings SET 
-            site_name=?, 
-            site_logo=?, 
-            truewallet_phone=?, 
-            marquee_text=?, 
-            facebook_url=?, 
-            line_url=?, 
-            discord_url=?,
-            discord_widget_id=?, 
-            youtube_url=?, 
-            tiktok_url=?, 
-            instagram_url=?, 
-            banner_img=?,
-            background_type=?, 
-            background_list=?, 
-            floating_emojis=?,
-            payment_tm_phone=?,     
-            payment_tm_api_url=?   
+    // SQL Update (เพิ่ม Discord Config เข้าไป)
+   $sql = "UPDATE settings SET 
+            site_name=?, site_description=?, site_about=?, site_logo=?, truewallet_phone=?, marquee_text=?, 
+            facebook_url=?, line_url=?, discord_url=?, discord_widget_id=?, 
+            youtube_url=?, tiktok_url=?, instagram_url=?, 
+            discord_client_id=?, discord_client_secret=?, discord_redirect_uri=?, 
+            banner_img=?, background_type=?, background_list=?, floating_emojis=?,
+            payment_tm_phone=?, payment_tm_api_url=?   
             WHERE id=1";
-
+            
     $stmt = $pdo->prepare($sql);
     
     if ($stmt->execute([
-        $site_name, $site_logo, $wallet_phone, $marquee, 
+        $site_name, $site_desc, $site_about, $site_logo, $wallet_phone, $marquee, // <--- เพิ่ม $site_about ต่อจาก site_desc
         $facebook, $line, $discord, $discord_widget_id, $youtube, $tiktok, $instagram, 
-        $banners_json,
-        $bg_type, $bg_list_json, $emojis,
+        $discord_client_id, $discord_client_secret, $discord_redirect_uri, 
+        $banners_json, $bg_type, $bg_list_json, $emojis,
         $pay_tm_phone, $pay_tm_api
     ])) {
         // Refresh Config
@@ -150,6 +146,7 @@ if (json_decode($current_bg_json) === null) $current_bg_json = json_encode([]);
         <div class="w-12 h-12 rounded-full bg-theme-main/20 flex items-center justify-center text-theme-main text-xl animate-pulse">
             <i class="fa-solid fa-gear"></i>
         </div>
+        
     </div>
 
     <form method="POST" class="space-y-6">
@@ -167,9 +164,17 @@ if (json_decode($current_bg_json) === null) $current_bg_json = json_encode([]);
                             <label class="block text-gray-400 text-xs mb-1">ชื่อเว็บไซต์</label>
                             <input type="text" name="site_name" value="<?php echo htmlspecialchars($config->site_name); ?>" class="input-dark w-full rounded-lg p-3 text-white">
                         </div>
+                        
+                        <div>
+                            <label class="block text-gray-400 text-xs mb-1">สโลแกน / คำอธิบายเว็บ</label>
+                            <input type="text" name="site_description" value="<?php echo htmlspecialchars($config->site_description ?? ''); ?>" placeholder="เช่น แหล่งรวมไอดีเกมอันดับ 1" class="input-dark w-full rounded-lg p-3 text-white">
+                        </div>
                         <div>
                             <label class="block text-gray-400 text-xs mb-1">ข้อความวิ่ง (Marquee)</label>
                             <input type="text" name="marquee_text" value="<?php echo htmlspecialchars($config->marquee_text); ?>" class="input-dark w-full rounded-lg p-3 text-white">
+                        </div>
+                        <div class="md:col-span-2"> <label class="block text-gray-400 text-xs mb-1">เกี่ยวกับร้านค้า (Footer)</label>
+                            <textarea name="site_about" rows="3" class="input-dark w-full rounded-lg p-3 text-white" placeholder="ร้านค้าออนไลน์ระบบอัตโนมัติ 24 ชั่วโมง..."><?php echo htmlspecialchars($config->site_about ?? ''); ?></textarea>
                         </div>
                     </div>
 
@@ -207,6 +212,24 @@ if (json_decode($current_bg_json) === null) $current_bg_json = json_encode([]);
                     </div>
                 </div>
 
+                <div class="glass-card p-6 rounded-2xl animate-up delay-300 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5"><i class="fa-brands fa-discord text-8xl"></i></div>
+                    <h3 class="text-lg font-bold text-indigo-400 mb-4 border-l-4 border-indigo-500 pl-3">ตั้งค่า Discord Login</h3>
+                    <div class="space-y-4 relative z-10">
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Client ID</label>
+                            <input type="text" name="discord_client_id" value="<?php echo htmlspecialchars($config->discord_client_id ?? ''); ?>" class="input-dark w-full rounded p-2 text-white text-sm font-mono">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Client Secret</label>
+                            <input type="text" name="discord_client_secret" value="<?php echo htmlspecialchars($config->discord_client_secret ?? ''); ?>" class="input-dark w-full rounded p-2 text-white text-sm font-mono" >
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-400 block mb-1">Redirect URI (ต้องตรงกับใน Discord Dev)</label>
+                            <input type="text" name="discord_redirect_uri" value="<?php echo htmlspecialchars($config->discord_redirect_uri ?? ''); ?>" class="input-dark w-full rounded p-2 text-white text-sm font-mono">
+                        </div>
+                    </div>
+                </div>
                 <div class="glass-card p-6 rounded-2xl animate-up delay-300">
                      <h3 class="text-lg font-bold text-white mb-4 border-l-4 border-pink-500 pl-3">ช่องทางติดต่อ</h3>
                      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">

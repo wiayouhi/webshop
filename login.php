@@ -7,7 +7,7 @@ if (isset($_SESSION['user_id'])) {
     exit;
 }
 
-// ส่วน Logic การล็อกอิน
+// ส่วน Logic การล็อกอินปกติ
 if (isset($_POST['login'])) {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
@@ -16,9 +16,7 @@ if (isset($_POST['login'])) {
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    // เช็คว่ามี user และ รหัสผ่านถูกต้อง (verify hash)
     if ($user && password_verify($password, $user->password)) {
-        // สร้าง Session
         $_SESSION['user_id'] = $user->id;
         $_SESSION['username'] = $user->username;
         $_SESSION['role'] = $user->role;
@@ -76,6 +74,16 @@ if (isset($_POST['login'])) {
                 เข้าสู่ระบบ
             </button>
         </form>
+
+        <div class="flex items-center justify-between my-5">
+            <hr class="w-full border-slate-600">
+            <span class="px-3 text-gray-400 text-sm">หรือ</span>
+            <hr class="w-full border-slate-600">
+        </div>
+
+        <a href="api/discord_login.php" class="block w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-1 text-center">
+            <i class="fa-brands fa-discord mr-2"></i> เข้าสู่ระบบด้วย Discord
+        </a>
 
         <div class="mt-6 text-center text-sm text-gray-400">
             ยังไม่มีบัญชี? <a href="/register" class="text-theme-main hover:text-white transition underline">สมัครสมาชิกใหม่</a>

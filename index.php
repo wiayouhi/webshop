@@ -48,8 +48,17 @@ if (!empty($web_config->banner_img)) {
     
     <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 z-10 pointer-events-none">
         <h2 class="text-3xl font-bold text-white text-glow drop-shadow-md">ยินดีต้อนรับสู่ <?php echo $web_config->site_name; ?></h2>
-        <p class="text-gray-300 mt-2 drop-shadow-sm">แหล่งรวมไอดีเกมและสินค้าดิจิตอลคุณภาพ อันดับ 1</p>
+        
+        <p class="text-gray-300 mt-2 drop-shadow-sm">
+            <?php 
+                echo !empty($web_config->site_description) 
+                    ? $web_config->site_description 
+                    : 'แหล่งรวมไอดีเกมและสินค้าดิจิตอลคุณภาพ อันดับ 1'; // ข้อความสำรองถ้ายังไม่ได้ตั้งค่า
+            ?>
+        </p>
+
     </div>
+</div>
 </div>
 
 <script>

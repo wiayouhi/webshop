@@ -2,7 +2,6 @@
 <?php
 require_once 'header.php';
 
-// ตรวจสอบว่าล็อกอินอยู่แล้วหรือยัง
 if (isset($_SESSION['user_id'])) {
     echo "<script>window.location='index.php';</script>";
     exit;
@@ -14,19 +13,16 @@ if (isset($_POST['register'])) {
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
     
-    // ตรวจสอบข้อมูลเบื้องต้น
     if (empty($username) || empty($password) || empty($confirm_password)) {
         $error_msg = "กรุณากรอกข้อมูลให้ครบทุกช่อง";
     } elseif ($password !== $confirm_password) {
         $error_msg = "รหัสผ่านยืนยันไม่ตรงกัน";
     } else {
-        // เช็คว่าชื่อซ้ำไหม
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
         $stmt->execute([$username]);
         if ($stmt->fetchColumn() > 0) {
             $error_msg = "ชื่อผู้ใช้นี้มีคนใช้แล้ว";
         } else {
-            // สมัครสมาชิก (เข้ารหัสรหัสผ่าน)
             $hash_password = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare("INSERT INTO users (username, password, role, point) VALUES (?, ?, 'member', 0)");
             if ($stmt->execute([$username, $hash_password])) {
@@ -92,6 +88,16 @@ if (isset($_POST['register'])) {
                 สมัครสมาชิก
             </button>
         </form>
+
+        <div class="flex items-center justify-between my-5">
+            <hr class="w-full border-slate-600">
+            <span class="px-3 text-gray-400 text-sm">หรือ</span>
+            <hr class="w-full border-slate-600">
+        </div>
+
+        <a href="api/discord_login.php" class="block w-full bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-1 text-center">
+            <i class="fa-brands fa-discord mr-2"></i> สมัครสมาชิกด้วย Discord
+        </a>
 
         <div class="mt-6 text-center text-sm text-gray-400">
             มีบัญชีอยู่แล้ว? <a href="/login" class="text-theme-main hover:text-white transition underline">เข้าสู่ระบบที่นี่</a>

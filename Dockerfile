@@ -11,6 +11,10 @@ RUN docker-php-ext-install pdo pdo_mysql
 # เปิดการใช้งาน Mod Rewrite สำหรับไฟล์ .htaccess
 RUN a2enmod rewrite
 
+# --- [ส่วนที่เพิ่ม] แก้ไข Apache Config ให้ยอมรับ .htaccess ---
+# คำสั่งนี้จะไปแก้คำว่า AllowOverride None เป็น AllowOverride All ในไฟล์ตั้งค่าหลัก
+RUN sed -i 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
 # คัดลอกโค้ดไปยังโฟลเดอร์ทำงาน
 COPY . /var/www/html/
 

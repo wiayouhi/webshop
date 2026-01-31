@@ -9,29 +9,28 @@ if (!$bg_list && !empty($web_config->background_img)) {
 }
 $emojis = isset($web_config->floating_emojis) ? array_filter(explode(',', $web_config->floating_emojis)) : [];
 
-// สีหลักเดิมของเว็บ (Set ไว้ก่อน)
+// สีหลักเดิมของเว็บ
 $original_site_color = ($web_config->site_color == "red") ? "#ef4444" : (($web_config->site_color == "blue") ? "#3b82f6" : "#8b5cf6");
-$site_main_color = $original_site_color; // ตัวแปรนี้จะถูกเปลี่ยนถ้ามีเทศกาล
+$site_main_color = $original_site_color;
 
-// --- 2. ระบบตรวจสอบเทศกาล (Seasonal System Ultimate) ---
+// --- 2. ระบบตรวจสอบเทศกาล ---
 $d = date('d');
 $m = date('m');
 
-// Default Config (วันปกติ)
 $season = [
     'type' => 'normal',
     'color' => $original_site_color,
     'icon' => 'fa-gamepad',
-    'title' => 'LOADING',
+    'title' => 'WELCOME',
     'sub' => 'Welcome to ' . $web_config->site_name,
     'effect' => 'normal' 
 ];
 
-// Logic ตรวจสอบเทศกาล & **เปลี่ยนสีธีมเว็บ**
+// Logic ตรวจสอบเทศกาล
 if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
     $season = [
         'type' => 'newyear',
-        'color' => '#fbbf24', // สีทอง
+        'color' => '#fbbf24',
         'icon' => 'fa-champagne-glasses',
         'title' => 'HAPPY NEW YEAR',
         'sub' => 'Wishing you happiness!',
@@ -40,7 +39,7 @@ if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
 } elseif ($m == 2 && $d >= 10 && $d <= 14) { // 🌹 วาเลนไทน์
     $season = [
         'type' => 'valentine',
-        'color' => '#f43f5e', // สีชมพูเข้ม
+        'color' => '#f43f5e',
         'icon' => 'fa-heart',
         'title' => 'HAPPY VALENTINE',
         'sub' => 'Love is in the air...',
@@ -49,7 +48,7 @@ if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
 } elseif ($m == 4 && $d >= 10 && $d <= 16) { // 💦 สงกรานต์
     $season = [
         'type' => 'songkran',
-        'color' => '#0ea5e9', // สีฟ้าสดใส
+        'color' => '#0ea5e9',
         'icon' => 'fa-water',
         'title' => 'HAPPY SONGKRAN',
         'sub' => 'Splash functionality loading...',
@@ -58,7 +57,7 @@ if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
 } elseif ($m == 10 && $d >= 25) { // 👻 ฮาโลวีน
     $season = [
         'type' => 'halloween',
-        'color' => '#f97316', // สีส้ม
+        'color' => '#f97316',
         'icon' => 'fa-ghost',
         'title' => 'TRICK OR TREAT',
         'sub' => 'Spooky loading...',
@@ -67,7 +66,7 @@ if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
 } elseif ($m == 11) { // 🌕 ลอยกระทง
     $season = [
         'type' => 'loykrathong',
-        'color' => '#facc15', // สีเหลือง
+        'color' => '#facc15',
         'icon' => 'fa-dharmachakra', 
         'title' => 'LOY KRATHONG',
         'sub' => 'Full moon loading...',
@@ -75,11 +74,6 @@ if ($m == 12 && $d >= 20 || $m == 1 && $d <= 5) { // 🎄 ปีใหม่
     ];
 }
 
-// ** Hack สำหรับเทส (ลบออกเมื่อใช้งานจริง) **
-// $season['type'] = 'songkran'; $season['color'] = '#0ea5e9'; $season['icon'] = 'fa-water'; 
-
-// *** ฟีเจอร์เปลี่ยนสีเว็บตามเทศกาล ***
-// ถ้าไม่ใช่ Normal ให้เอาสีเทศกาลมาทับสีหลักเว็บเลย
 if ($season['type'] !== 'normal') {
     $site_main_color = $season['color'];
 }
@@ -93,7 +87,7 @@ if ($season['type'] !== 'normal') {
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
@@ -103,24 +97,32 @@ if ($season['type'] !== 'normal') {
                     fontFamily: { sans: ['Kanit', 'sans-serif'] },
                     colors: {
                         theme: {
-                            main: '<?php echo $site_main_color; ?>', // สีนี้จะเปลี่ยนตามเทศกาล
+                            main: '<?php echo $site_main_color; ?>',
                             hover: '<?php echo $site_main_color; ?>CC',
+                            dark: '#0f172a',
+                            glass: 'rgba(30, 41, 59, 0.7)',
                         }
                     },
                     animation: {
                         'float': 'float 6s ease-in-out infinite',
                         'fade-in-up': 'fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'season-bounce': 'seasonBounce 2s infinite',
+                        'spin-fast': 'spin 0.8s linear infinite',
+                        'entrance-left': 'slideInLeft 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                        'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
                     },
                     keyframes: {
                         fadeInUp: {
                             '0%': { opacity: '0', transform: 'translateY(20px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
                         },
-                        seasonBounce: {
-                            '0%, 100%': { transform: 'translateY(-5%)', animationTimingFunction: 'cubic-bezier(0.8,0,1,1)' },
-                            '50%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0,0,0.2,1)' },
+                        slideInLeft: {
+                            '0%': { opacity: '0', transform: 'translateX(-50px)' },
+                            '100%': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.5)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
                         }
                     }
                 }
@@ -129,8 +131,9 @@ if ($season['type'] !== 'normal') {
     </script>
 
     <script>
-        if (sessionStorage.getItem('introShown')) {
-            document.write('<style>#page-loader { display: none !important; }</style>');
+        // Check Landing Overlay Session
+        if (sessionStorage.getItem('enteredSite')) {
+            document.write('<style>#landing-overlay { display: none !important; }</style>');
         }
     </script>
 
@@ -152,49 +155,37 @@ if ($season['type'] !== 'normal') {
         /* Canvas Effect (Layer หลังสุด) */
         #season-canvas { position: fixed; inset: 0; z-index: -5; pointer-events: none; }
 
-        /* --- Seasonal Loader --- */
-        #page-loader {
-            position: fixed; inset: 0; z-index: 9999;
-            background: #020617;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.8s cubic-bezier(0.7, 0, 0.3, 1), visibility 0.8s;
-        }
-        #page-loader.loaded { opacity: 0; visibility: hidden; }
-        
-        .loader-icon-wrapper {
-            width: 100px; height: 100px;
+        /* --- New Landing Overlay Styles (Modified) --- */
+        #landing-overlay {
+            position: fixed; inset: 0; z-index: 9998;
+            /* ปรับพื้นหลังเป็น Glassmorphism (ทึบแสงแต่โปร่งใสเล็กน้อย + เบลอ) */
+            background: rgba(15, 23, 42, 0.75); /* ปรับความโปร่งใสที่นี่ (0.75) */
+            backdrop-filter: blur(20px); /* ความเบลอของฉากหลัง */
+            -webkit-backdrop-filter: blur(20px);
             display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s;
+        }
+        #landing-overlay.hidden-overlay { opacity: 0; visibility: hidden; pointer-events: none; }
+        
+        /* Grid Background Pattern (Modified: เอา Mask วงกลมออก) */
+        .bg-grid-animated {
+            background-size: 50px 50px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            /* ลบ mask-image ออกเพื่อให้ Grid เต็มหน้าจอ ไม่ใช่แค่วงกลม */
+        }
+
+        /* Card Menu Hover Effect */
+        .menu-card {
             background: rgba(255, 255, 255, 0.03);
-            border: 2px solid <?php echo $season['color']; ?>;
-            box-shadow: 0 0 30px <?php echo $season['color']; ?>40;
-            margin-bottom: 2rem;
-            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s;
         }
-        
-        /* Pulse Effect */
-        .loader-icon-wrapper::before {
-            content: ''; position: absolute; inset: -5px; border-radius: 50%;
-            border: 2px solid <?php echo $season['color']; ?>;
-            opacity: 0.5; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        .menu-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(var(--theme-main), 0.5);
+            transform: translateY(-5px);
         }
-        @keyframes ping { 75%, 100% { transform: scale(1.5); opacity: 0; } }
-
-        .loader-icon { font-size: 3rem; color: <?php echo $season['color']; ?>; }
-        
-        /* Progress Bar */
-        .loader-progress { width: 240px; height: 4px; background: #1e293b; border-radius: 10px; overflow: hidden; position: relative; }
-        .loader-bar { 
-            position: absolute; left: 0; top: 0; height: 100%; 
-            background: <?php echo $season['color']; ?>; 
-            box-shadow: 0 0 10px <?php echo $season['color']; ?>;
-            width: 0%; animation: loading 1.5s ease-in-out forwards;
-        }
-        @keyframes loading { 0% { width: 0%; } 100% { width: 100%; } }
-
-        /* Songkran Water Drop */
-        .water-drop { position: absolute; width: 10px; height: 10px; background: #0ea5e9; border-radius: 50%; animation: drop 1s infinite; }
-        @keyframes drop { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(50px) scale(0); opacity: 0; } }
 
         /* Navigation Styles */
         .glass-nav { background: rgba(15, 23, 42, 0.05); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.05); transition: all 0.4s; }
@@ -211,31 +202,65 @@ if ($season['type'] !== 'normal') {
         /* Emoji Floating */
         .floating-emoji { position: fixed; z-index: -5; animation: floatUp linear forwards; pointer-events: none; opacity: 0; filter: blur(1px); }
         @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg) scale(0.8); opacity: 0; } 10% { opacity: 0.6; } 100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); opacity: 0; } }
+        
+        /* Effect for Refresh Text */
+        .text-flash { animation: flashText 0.5s ease; color: #4ade80 !important; }
+        @keyframes flashText { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="flex flex-col min-h-screen">
 
-    <div id="page-loader">
-        <div class="loader-icon-wrapper <?php echo ($season['type'] == 'songkran' || $season['type'] == 'valentine') ? 'animate-season-bounce' : ''; ?>">
-            <?php if($season['type'] == 'normal' && $web_config->site_logo): ?>
-                <img src="<?php echo $web_config->site_logo; ?>" class="w-16 h-16 rounded-full object-cover">
-            <?php else: ?>
-                <i class="fa-solid <?php echo $season['icon']; ?> loader-icon"></i>
-            <?php endif; ?>
+    <div id="landing-overlay" class="bg-grid-animated">
+        <div class="container mx-auto px-6 max-w-6xl relative z-10">
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-24">
+                
+                <div class="text-center lg:text-right opacity-0 animate-entrance-left" style="animation-delay: 0.1s;">
+                    <div class="relative inline-block">
+                        <h1 class="text-6xl lg:text-8xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-indigo-200 to-indigo-400 drop-shadow-[0_0_25px_rgba(99,102,241,0.5)]">
+                            <?php echo $web_config->site_name; ?>
+                        </h1>
+                        <h1 class="text-6xl lg:text-8xl font-black uppercase tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white/10 to-transparent absolute top-full left-0 transform scale-y-[-0.3] origin-top blur-sm select-none">
+                            <?php echo $web_config->site_name; ?>
+                        </h1>
+                    </div>
+                    <p class="mt-4 text-indigo-300 text-lg lg:text-xl font-light tracking-widest uppercase">
+                        Welcome to our official store
+                    </p>
+                </div>
 
-            <?php if($season['type'] == 'songkran'): ?>
-                <div class="water-drop" style="top: 80%; left: 30%;"></div>
-                <div class="water-drop" style="top: 80%; left: 70%; animation-delay: 0.5s;"></div>
-            <?php endif; ?>
-        </div>
-        
-        <h1 class="text-3xl font-bold tracking-widest uppercase mb-2" style="color: <?php echo $season['color']; ?>; text-shadow: 0 0 15px <?php echo $season['color']; ?>50;">
-            <?php echo $season['title']; ?>
-        </h1>
-        <p class="text-sm text-gray-400 font-light tracking-wider mb-8"><?php echo $season['sub']; ?></p>
-        
-        <div class="loader-progress">
-            <div class="loader-bar"></div>
+                <div class="hidden lg:block w-px h-64 bg-gradient-to-b from-transparent via-indigo-500/50 to-transparent"></div>
+
+                <div class="flex-1 w-full max-w-md flex flex-col gap-6">
+                    
+                    <button onclick="enterSite()" class="opacity-0 animate-pop-in group relative w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl font-bold text-xl text-white shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all duration-300 overflow-hidden" style="animation-delay: 0.3s;">
+                        <span class="relative z-10 flex items-center justify-center gap-3">
+                            เข้าสู่เว็บไซต์ <i class="fa-solid fa-arrow-right-long group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                    </button>
+
+                    <div class="text-center text-gray-500 text-sm opacity-0 animate-pop-in" style="animation-delay: 0.4s;">- หรือเลือกเมนูทางลัด -</div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <a href="shop.php" class="menu-card p-3 rounded-lg flex items-center gap-3 opacity-0 animate-pop-in" style="animation-delay: 0.5s;">
+                            <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fa-solid fa-cart-shopping"></i></div>
+                            <div class="text-left"><div class="text-sm font-bold text-gray-200">สินค้า</div><div class="text-xs text-gray-500">Products</div></div>
+                        </a>
+                        <a href="topup.php" class="menu-card p-3 rounded-lg flex items-center gap-3 opacity-0 animate-pop-in" style="animation-delay: 0.6s;">
+                            <div class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400"><i class="fa-solid fa-wallet"></i></div>
+                            <div class="text-left"><div class="text-sm font-bold text-gray-200">เติมเงิน</div><div class="text-xs text-gray-500">Topup</div></div>
+                        </a>
+                        <a href="redeem.php" class="menu-card p-3 rounded-lg flex items-center gap-3 opacity-0 animate-pop-in" style="animation-delay: 0.7s;">
+                            <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fa-solid fa-gift"></i></div>
+                            <div class="text-left"><div class="text-sm font-bold text-gray-200">โค้ด</div><div class="text-xs text-gray-500">Redeem</div></div>
+                        </a>
+                        <a href="contact.php" class="menu-card p-3 rounded-lg flex items-center gap-3 opacity-0 animate-pop-in" style="animation-delay: 0.8s;">
+                            <div class="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-400"><i class="fa-solid fa-comments"></i></div>
+                            <div class="text-left"><div class="text-sm font-bold text-gray-200">ติดต่อ</div><div class="text-xs text-gray-500">Contact</div></div>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -296,14 +321,16 @@ if ($season['type'] !== 'normal') {
 
                 <div class="flex items-center gap-4">
                     <?php if(isset($_SESSION['user_id'])): ?>
-                        <div class="hidden lg:flex flex-col items-end mr-2">
-                            <span class="text-[10px] text-gray-400 font-light uppercase tracking-wider">Balance</span>
+                        <div class="hidden lg:flex flex-col items-end mr-2 cursor-pointer group/balance" onclick="updateBalance()" title="คลิกเพื่ออัปเดตยอดเงิน">
+                            <span class="text-[10px] text-gray-400 font-light uppercase tracking-wider flex items-center gap-1">
+                                Balance 
+                                <i id="refresh-icon" class="fa-solid fa-rotate-right text-[10px] opacity-0 group-hover/balance:opacity-100 transition-all duration-300 text-theme-main"></i>
+                            </span>
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-coins text-yellow-400 text-xs"></i>
-                                <span class="font-bold text-white text-lg leading-none">฿<?php echo number_format($_SESSION['point'], 2); ?></span>
+                                <span class="font-bold text-white text-lg leading-none">฿<span id="user-balance"><?php echo number_format($_SESSION['point'], 2); ?></span></span>
                             </div>
                         </div>
-
                         <div class="relative group z-50">
                             <button class="relative w-10 h-10 rounded-full p-0.5 border-2 border-transparent hover:border-theme-main transition-all duration-300">
                                 <img src="<?php echo $_SESSION['profile_img'] ? $_SESSION['profile_img'] : 'https://ui-avatars.com/api/?name='.$_SESSION['username']; ?>" class="w-full h-full rounded-full object-cover bg-slate-800">
@@ -381,7 +408,9 @@ if ($season['type'] !== 'normal') {
                         <img src="<?php echo $_SESSION['profile_img'] ? $_SESSION['profile_img'] : 'https://ui-avatars.com/api/?name='.$_SESSION['username']; ?>" class="w-12 h-12 rounded-full border-2 border-theme-main">
                         <div>
                             <div class="text-white font-bold"><?php echo $_SESSION['username']; ?></div>
-                            <div class="text-theme-main text-sm font-semibold">฿ <?php echo number_format($_SESSION['point'], 2); ?></div>
+                            <div class="text-theme-main text-sm font-semibold flex items-center gap-2" onclick="updateBalance()">
+                                ฿ <span id="mobile-balance"><?php echo number_format($_SESSION['point'], 2); ?></span> <i class="fa-solid fa-rotate-right text-xs"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -430,26 +459,14 @@ if ($season['type'] !== 'normal') {
     <main class="flex-grow container mx-auto px-4 py-6 relative z-10 animate-fade-in-up" style="animation-delay: 0.2s;">
 
     <script>
-        // --- 1. Smart Loader Logic (แก้ปัญหาโหลดบ่อย) ---
-        window.addEventListener('load', () => {
-            const loader = document.getElementById('page-loader');
-            
-            // เช็คว่าเคยเข้ามาใน Session นี้หรือยัง
-            if (!sessionStorage.getItem('introShown')) {
-                // ครั้งแรก: ให้เล่น Animation
-                setTimeout(() => {
-                    loader.classList.add('loaded');
-                    // บันทึกว่าแสดงแล้ว
-                    sessionStorage.setItem('introShown', 'true');
-                }, 1200);
-            } else {
-                // ครั้งต่อไป: ซ่อนทันที (จริงๆ CSS ซ่อนไปแล้วใน <head> เพื่อกันกระพริบ แต่ใส่ไว้อีกทีเพื่อความชัวร์)
-                loader.classList.add('loaded');
-                loader.style.display = 'none';
-            }
-        });
+        // --- Logic: Enter Site ---
+        function enterSite() {
+            const overlay = document.getElementById('landing-overlay');
+            overlay.classList.add('hidden-overlay');
+            sessionStorage.setItem('enteredSite', 'true');
+        }
 
-        // --- 2. Nav Scroll ---
+        // --- Nav Scroll ---
         const navbar = document.getElementById('main-nav');
         window.addEventListener('scroll', () => {
             if (window.scrollY > 20) { navbar.classList.add('scrolled'); } 
@@ -460,19 +477,44 @@ if ($season['type'] !== 'normal') {
             const overlay = document.getElementById('mobile-menu-overlay');
             const drawer = document.getElementById('mobile-menu-drawer');
             if (drawer.classList.contains('open')) {
-                drawer.classList.remove('open');
-                overlay.classList.remove('opacity-100', 'pointer-events-auto');
-                overlay.classList.add('opacity-0', 'pointer-events-none');
-                document.body.style.overflow = '';
+                drawer.classList.remove('open'); overlay.classList.remove('opacity-100', 'pointer-events-auto'); overlay.classList.add('opacity-0', 'pointer-events-none'); document.body.style.overflow = '';
             } else {
-                drawer.classList.add('open');
-                overlay.classList.remove('opacity-0', 'pointer-events-none');
-                overlay.classList.add('opacity-100', 'pointer-events-auto');
-                document.body.style.overflow = 'hidden';
+                drawer.classList.add('open'); overlay.classList.remove('opacity-0', 'pointer-events-none'); overlay.classList.add('opacity-100', 'pointer-events-auto'); document.body.style.overflow = 'hidden';
             }
         }
 
-        // --- 3. BG Slider ---
+        // --- AJAX Update Balance ---
+        async function updateBalance() {
+            const icon = document.getElementById('refresh-icon');
+            const balanceText = document.getElementById('user-balance');
+            const mobileBalance = document.getElementById('mobile-balance');
+
+            if(icon) icon.classList.add('animate-spin-fast');
+
+            try {
+                const response = await fetch('api/check_balance.php'); 
+                if (!response.ok) throw new Error("API Error");
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    if(balanceText) {
+                        balanceText.innerText = data.point;
+                        balanceText.classList.add('text-flash');
+                        setTimeout(() => balanceText.classList.remove('text-flash'), 500);
+                    }
+                    if(mobileBalance) mobileBalance.innerText = data.point;
+                } else {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.warn('Auto refresh failed, reloading...');
+                window.location.reload();
+            } finally {
+                setTimeout(() => { if(icon) icon.classList.remove('animate-spin-fast'); }, 800);
+            }
+        }
+
+        // --- BG Slider ---
         <?php if ($web_config->background_type == 'image' && count($bg_list) > 1): ?>
         const slides = document.querySelectorAll('.bg-slide');
         let currentSlide = 0;
@@ -483,7 +525,7 @@ if ($season['type'] !== 'normal') {
         }, 6000); 
         <?php endif; ?>
 
-        // --- 4. Seasonal Canvas (เหมือนเดิม) ---
+        // --- Seasonal Canvas ---
         const season = '<?php echo $season['effect']; ?>';
         const canvas = document.getElementById('season-canvas');
         const ctx = canvas.getContext('2d');
@@ -516,7 +558,7 @@ if ($season['type'] !== 'normal') {
         }
 
         let fireworks = [];
-        class Firework { /* ... Firework Code เหมือนเดิม ... */
+        class Firework { 
             constructor() { this.x = Math.random() * width; this.y = height; this.targetY = Math.random() * (height / 2); this.speed = 10; this.particles = []; this.exploded = false; this.color = `hsl(${Math.random() * 360}, 100%, 50%)`; }
             update() { if (!this.exploded) { this.y -= this.speed; if (this.y <= this.targetY) this.explode(); } else { for (let i = this.particles.length - 1; i >= 0; i--) { this.particles[i].update(); if (this.particles[i].alpha <= 0) this.particles.splice(i, 1); } } }
             draw() { if (!this.exploded) { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, 3, 0, Math.PI*2); ctx.fill(); } else { this.particles.forEach(p => p.draw()); } }
@@ -544,7 +586,7 @@ if ($season['type'] !== 'normal') {
         }
         if (season !== 'normal') animate();
 
-        // --- 5. Emoji Fallback ---
+        // --- Emoji Fallback ---
         <?php if ($season['effect'] == 'normal' && !empty($emojis)): ?>
         const emojiList = <?php echo json_encode(array_values($emojis)); ?>;
         function spawnEmoji() {

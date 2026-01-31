@@ -1,17 +1,21 @@
 <?php
 /**
  * DATABASE CONNECTION & SECURITY CONFIGURATION
- * ปรับปรุงสำหรับ Render + TiDB Cloud (SSL Enforcement)
+ * Stealth Mode: ส่งค่า 404 Not Found เมื่อมีการบุกรุก
  */
 
 // -------------------------------------------------------------------------
 // 🕵️ STEALTH FUNCTION: ฟังก์ชันส่งหน้า 404 เพื่อตบตาแฮกเกอร์
 // -------------------------------------------------------------------------
 function trigger404() {
+    // ส่ง HTTP Status 404 บอก Browser/Scanner ว่าไม่พบไฟล์นี้
     header("HTTP/1.1 404 Not Found");
+
+    // ดึงไฟล์ 404.php มาแสดง (ถ้ามี) โดยที่ URL เดิมจะไม่เปลี่ยน
     if (file_exists(__DIR__ . '/404.php')) {
         include(__DIR__ . '/404.php');
     } else {
+        // กรณีไม่มีไฟล์ 404.php ให้แสดงหน้ามาตรฐานของ Apache/Nginx
         echo '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
         <html><head><title>404 Not Found</title></head><body>
         <h1>Not Found</h1>
@@ -19,26 +23,26 @@ function trigger404() {
         <hr><address>Apache Server at ' . $_SERVER['HTTP_HOST'] . ' Port 80</address>
         </body></html>';
     }
-    exit;
+    exit; // หยุดการทำงานทันที
 }
 
-// ป้องกันการเข้าถึงไฟล์ db.php โดยตรงผ่าน URL
+// 1. ป้องกันการเข้าถึงไฟล์ db.php โดยตรงผ่าน URL
 if (basename($_SERVER['PHP_SELF']) == basename(__FILE__)) {
     trigger404();
 }
 
 // -------------------------------------------------------------------------
-// 🛡️ SECURITY HEADERS & SESSION
+// 🛡️ SECURITY HEADERS: ป้องกัน Clickjacking, Sniffing และ XSS
 // -------------------------------------------------------------------------
 header("X-Frame-Options: SAMEORIGIN");
 header("X-Content-Type-Options: nosniff");
-header("Content-Security-Policy: default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: 'unsafe-inline'; font-src 'self' https: data:;");
+header("Content-Security-Policy: default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';");
 
+// บังคับการตั้งค่า Cookie ให้ปลอดภัย
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-if (getenv('RENDER')) { // ตรวจสอบว่ารันบน Render หรือไม่
-    ini_set('session.cookie_secure', 1); 
-}
+// หากใช้งาน HTTPS (SSL) ให้เปิดบรรทัดล่างนี้:
+// ini_set('session.cookie_secure', 1); 
 
 ob_start(); 
 if (session_status() === PHP_SESSION_NONE) {
@@ -47,45 +51,32 @@ if (session_status() === PHP_SESSION_NONE) {
 date_default_timezone_set("Asia/Bangkok");
 
 // -------------------------------------------------------------------------
-// 🛡️ CSRF PROTECTION
+// 🛡️ CSRF PROTECTION: สร้าง Token สำหรับฟอร์มป้องกันการปลอมแปลงคำสั่ง
 // -------------------------------------------------------------------------
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    if (function_exists('random_bytes')) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } else {
+        $_SESSION['csrf_token'] = bin2hex(openssl_random_pseudo_bytes(32));
+    }
 }
 
 // -------------------------------------------------------------------------
-// 🔌 DATABASE CONNECTION (PDO) - บังคับ SSL สำหรับ TiDB Cloud
+// 🔌 DATABASE CONNECTION (PDO)
 // -------------------------------------------------------------------------
-$host     = getenv('DB_HOST')     ?: 'localhost';
-$dbname   = getenv('DB_NAME')     ?: 'shop_db';
-$username = getenv('DB_USER')     ?: 'root';
-$password = getenv('DB_PASS')     ?: '';
-$port     = getenv('DB_PORT')     ?: '4000'; // TiDB มักจะใช้ 4000
+$host = 'localhost';
+$dbname = 'shop_db';
+$username = 'root';
+$password = '';
 
 try {
-    $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
-    
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-        // สำคัญมากสำหรับ TiDB: บังคับใช้ SSL ทันทีที่เชื่อมต่อ
-        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4',
-    ];
-
-    // ตรวจสอบและบังคับใช้ SSL ถ้าไม่ได้รันบน localhost
-    if ($host !== 'localhost' && $host !== '127.0.0.1') {
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-        // บรรทัดนี้จะบังคับให้ Driver ใช้ SSL Mode ในการเชื่อมต่อ
-        if (defined('PDO::MYSQL_ATTR_SSL_CA')) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = true;
-        }
-    }
-
-    $pdo = new PDO($dsn, $username, $password, $options);
-    
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 } catch(PDOException $e) {
-    // บันทึก Error ลง Log เพื่อตรวจสอบบน Dashboard ของ Render
+    // เก็บ Error ไว้ใน Log (ห้ามแสดงบนหน้าเว็บเด็ดขาด)
     error_log("Database Connection Error: " . $e->getMessage()); 
+    // แกล้งตายหรือบอกแค่ว่าระบบขัดข้องชั่วคราว
     die("<h1>Service Unavailable</h1><p>The server is temporarily unable to service your request.</p>");
 }
 
@@ -100,6 +91,7 @@ try {
     $web_config = null;
 }
 
+// ค่า Default หากไม่มีข้อมูลในฐานข้อมูล
 if (!$web_config) {
     $web_config = (object)[
         'site_name' => 'My Shop',
@@ -110,7 +102,11 @@ if (!$web_config) {
     ];
 }
 
+// -------------------------------------------------------------------------
 // 👮 AUTHENTICATION FUNCTIONS
+// -------------------------------------------------------------------------
+
+// ฟังก์ชันตรวจสอบการล็อกอินทั่วไป
 function checkLogin() {
     if (!isset($_SESSION['user_id'])) {
         header("Location: login.php");
@@ -118,10 +114,11 @@ function checkLogin() {
     }
 }
 
+// ฟังก์ชันตรวจสอบแอดมิน (Stealth Mode)
+// ใครก็ตามที่ไม่ใช่ Admin เข้ามาหน้านี้ จะเห็นเป็น 404 ทันที
 function checkAdmin($pdo) {
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
         trigger404();
     }
 }
 ?>
-
