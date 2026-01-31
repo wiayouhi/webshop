@@ -1,0 +1,24 @@
+Options -Indexes -MultiViews
+RewriteEngine On
+RewriteBase /
+
+# 1. ซ่อน .php (เฉพาะถ้าไม่ใช่ Folder และไฟล์ .php มีอยู่จริง)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+)$ $1.php [L]
+
+# 2. redirect ถ้ามี .php (แก้ไข: ห้าม Redirect ถ้าเป็นการส่ง POST)
+RewriteCond %{REQUEST_METHOD} !POST
+RewriteCond %{THE_REQUEST} \s/(.+)\.php[\s?] [NC]
+RewriteRule ^ %1 [R=301,L]
+
+# 3. อนุญาต index
+DirectoryIndex index.php
+
+# 4. หน้า 404
+ErrorDocument 404 /404.php
+
+# 5. ป้องกันไฟล์จุด
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
