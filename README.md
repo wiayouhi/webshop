@@ -31,6 +31,6 @@
 ---
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=wiayouhi/webshop&type=date&legend=top-left)](https://www.star-history.com/#wiayouhi/webshop&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=wiayouhi/webshop&type=date&legend=top-left)](https://www.star-history.com/?repos=wiayouhi%2Fwebshop&type=date&legend=top-left)
 ---
 *Created for education. Not for sale.ใครขายพ่อ*ตา-* 
