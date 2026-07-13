@@ -31,11 +31,13 @@
 ---
 ## Star History
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date&theme=dark">
-  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date">
-  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date">
-</picture>
+<a href="https://www.star-history.com/?repos=wiayouhi%2Fwebshop&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=wiayouhi/webshop&type=date&theme=dark&legend=top-left&sealed_token=vkiMPRKLnoLTiV7BbF5BSZhIItC4NSdnElP5sjWyRW2L1y_gg92jLHGzJ0JMXy4bT6QRg7EB" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=wiayouhi/webshop&type=date&legend=top-left&sealed_token=vkiMPRKLnoLTiV7BbF5BSZhIItC4NSdnElP5sjWyRW2L1y_gg92jLHGzJ0JMXy4bT6QRg7EB" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=wiayouhi/webshop&type=date&legend=top-left&sealed_token=vkiMPRKLnoLTiV7BbF5BSZhIItC4NSdnElP5sjWyRW2L1y_gg92jLHGzJ0JMXy4bT6QRg7EB" />
+ </picture>
+</a>
 
 ---
 *Created for education. Not for sale.ใครขายพ่อ*ตา-* 
