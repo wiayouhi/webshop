@@ -31,7 +31,11 @@
 ---
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=wiayouhi/php-ecommerce&type=date&legend=top-left)](https://www.star-history.com/?repos=wiayouhi%2Fphp-ecommerce&type=date&legend=top-left)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date&theme=dark">
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date">
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=wiayouhi/ชื่อโปรเจกต์ของคุณ&type=date">
+</picture>
 
 ---
 *Created for education. Not for sale.ใครขายพ่อ*ตา-* 
